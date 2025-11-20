@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--Made by Bart van Keep-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Character HP Tracker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: sans-serif;
+    }
+    body {
+      background: #fff4c4;
+      margin: 0;
+      padding: 10px;
+	  position: relative;
+    }
+    h1 {
+      text-align: center;
+      background: #f2c94c;
+      padding: 15px;
+      border-radius: 15px;
+    }
+    .enemy-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .enemy-block {
+      background: #bababa;
+      border-radius: 10px;
+      padding: 10px;
+      width: 200px;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    }
+    .enemy-block input[type="text"],
+    .enemy-block input[type="number"],
+    .enemy-block textarea {
+      width: 100%;
+      margin: 2px 0;
+      padding: 4px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+	.enemy-block.dragging {
+	  opacity: 0.5;
+	  background-color: #e0e0e0;
+	}
+	@keyframes flash {
+	  0% { outline: 6px solid gold; }
+	  0% { opacity: 0.1; }
+	  0% { background-color:white; }
+	  90% { outline: 0px solid gold; }
+	  100% { background-color:none; }
+	  100% { opacity: 1; }
+	}
+	.enemy-block.flash {
+	animation: flash 0.8s ease;
+	}
+	.enemy-block.colorfade {
+	animation: flash 0.4s ease;
+	}
+	@keyframes error {
+	  0%  { background-color:white; }
+	  10% { background-color:red; }
+	  20% { background-color:white; }
+	  30% { background-color:red; }
+	  40% { background-color:white; }
+	  50% { background-color:red; }
+	  60% { background-color:white; }
+	  70% { background-color:red; }
+	  80% { background-color:white; }
+	  90% { background-color:red; }
+	  100% { background-color:none; }
+	}
+	.enemy-block.error {
+	animation: error 6.0s ease;
+	}
+	
+	.shake {
+		animation: shake 0.5s ease-in-out;
+	}
+	
+
+	.implode {
+		animation: implode 0.3s ease-in forwards;
+	}
+
+	@keyframes shake {
+		0% { transform: translate(0px, 0px) rotate(0deg); }
+		10% { transform: translate(-5px, -5px) rotate(-2deg); }
+		20% { transform: translate(5px, 5px) rotate(2deg); }
+		30% { transform: translate(-5px, 5px) rotate(-2deg); }
+		40% { transform: translate(5px, -5px) rotate(2deg); }
+		50% { transform: translate(-5px, -5px) rotate(-2deg); }
+		60% { transform: translate(5px, 5px) rotate(2deg); }
+		70% { transform: translate(-5px, 5px) rotate(-2deg); }
+		80% { transform: translate(5px, -5px) rotate(2deg); }
+		90% { transform: translate(-5px, -5px) rotate(-2deg); }
+		100% { transform: translate(0, 0) rotate(0); }
+	}
+
+	@keyframes implode {
+		0% { transform: scale(1); opacity: 1; }
+		100% { transform: scale(0); opacity: 0; }
+	}	
+	.sparkle {
+	  position: absolute;
+	  font-size: 24px;
+	  color: gold;
+	  animation: sparkle-pop 1.0s ease-out forwards;
+	  pointer-events: none;
+	  z-index: 1000;
+	}
+
+	@keyframes sparkle-pop {
+	  0% {
+		opacity: 1;
+		transform: scale(1) translateY(-10px);
+	  }
+	  100% {
+		opacity: 0;
+		transform: scale(5) translateY(-10px) rotate(45deg);
+	  }
+	}
+	
+	.quake {
+		animation: quake 0.3s ease-in-out;
+	}
+	
+	@keyframes quake {
+		0% { transform: translate(0px, 0px) rotate(0deg); }
+
+		20% { transform: translate(-5px, -10px) rotate(2deg); }
+
+		40% { transform: translate(5px, 5px) rotate(2deg); }
+
+		60% { transform: translate(-5px, -5px) rotate(2deg); }
+
+		80% { transform: translate(-5px, 5px) rotate(2deg); }
+
+		100% { transform: translate(0, 0) rotate(0); }
+	}
+	
+	.stomp {
+		animation: stomp 1.0s ease-in-out;
+	}
+	
+	@keyframes stomp {
+		0% { transform: scale(8); opacity: 0; }
+		65% { transform: scale(6); opacity: 0.3; }
+		100% { transform: scale(1); opacity: 1; }
+	}
+		
+	.squish {
+		animation: squish 0.5s ease-in-out;
+	}
+	
+	@keyframes squish {
+		0% { transform: scale(1); }
+		10% { transform: scale(1.05) translate(0, -20px); }
+		100% { transform: scale(1) translate(0, 0); }
+	}
+	
+	.spin {
+		animation: spin 0.6s ease-in-out;
+	}
+	
+	@keyframes spin {
+		0% { transform: scale(1) rotate(0deg); background-color:pink}
+		10% { background-color:red;}
+		30% { background-color:yellow;}
+		50% { transform: scale(0.5) rotate(180deg); background-color:lime;}
+		70% { background-color:lightblue;}
+		90% { background-color:hotpink;}
+		100% { transform: scale(1) rotate(360deg); background-color:none;}
+	}
+	
+	.sillypassing {
+		animation: sillypassing 0.6s ease-in-out;
+	}
+	
+	@keyframes sillypassing {
+		0% { background-color: none;}
+		10% { background-color:white; color:white; outline: 4px outset lime;}
+		20% { background-color:none; color:none;}
+		80% { outline: 4px outset gold; }
+		100% { outline: 0px outset gold; }
+	}
+	
+	.passing {
+		animation: passing 0.6s ease-in-out;
+	}
+	
+	@keyframes passing {
+		0% { outline: 0px outset lime; opacity: 1; transform: scale(1.0);}
+		10% { outline: 4px outset lime; opacity: 0.7; transform: scale(0.99);}
+		80% { outline: 4px outset gold; opacity: 1; transform: scale(1.0);}
+		100% { outline: 0px outset gold; }
+	}
+	
+	.healed {
+		animation: healed 0.6s ease-in-out;
+	}
+	@keyframes healed {
+		0% {outline: 0px outset lime; color: none; transform: scale(1.0);}
+		10% {outline: 3px outset lime; color: lime; transform: scale(1.1);}
+		80% { outline: 3px outset lime; color: lime; transform: scale(1.0);}
+		100% { outline: 0px outset gold; color: none;}
+	}
+	.damaged {
+		animation: damaged 0.6s ease-in-out;
+	}
+	@keyframes damaged {
+		0% {outline: 0px outset red; color: none; transform: scale(1.0);}
+		10% {outline: 3px outset red; color: red; transform: scale(0.9);}
+		80% { outline: 3px outset red; color: red; transform: scale(1.0);}
+		100% { outline: 0px outset gold; color: none;}
+	}
+	.nochange {
+		animation: nochange 0.6s ease-in-out;
+	}
+	@keyframes nochange {
+		0% {outline: 0px outset gray; color: none;}
+		10% {outline: 3px outset gray; color: gray;}
+		80% { outline: 3px outset gray; color: gray;}
+		100% { outline: 0px outset gold; color: none;}
+	}
+	.sillydamaged {
+		animation: sillydamaged 0.6s ease-in-out;
+		}
+	@keyframes sillydamaged {
+		0% { transform: translate(0px, 0px) rotate(0deg); }
+		0% {outline: 0px outset red; color: none;}
+		10% { transform: translate(-5px, -5px) rotate(-2deg); }
+		10% {outline: 3px outset red; color: red;}
+		20% { transform: translate(5px, 5px) rotate(2deg); }
+		30% { transform: translate(-5px, 5px) rotate(-2deg); }
+		40% { transform: translate(5px, -5px) rotate(2deg); }
+		50% { transform: translate(-5px, -5px) rotate(-2deg); }
+		60% { transform: translate(5px, 5px) rotate(2deg); }
+		70% { transform: translate(-5px, 5px) rotate(-2deg); }
+		80% { transform: translate(5px, -5px) rotate(2deg); }
+		80% { outline: 3px outset red; color: red;}
+		90% { transform: translate(-5px, -5px) rotate(-2deg); }
+		100% { transform: translate(0, 0) rotate(0); }
+		100% { outline: 0px outset gold; color: none;}
+	}
+	.healeffect {
+	  position: absolute;
+	  font-size: 24px;
+	  color: lime;
+	  animation: heal-fly 1.5s ease-out forwards;
+	  pointer-events: none;
+	  z-index: 1000;
+	}
+	
+	.sillyhealed {
+		animation: sillyhealed 0.6s ease-in-out;
+	}
+	@keyframes sillyhealed {
+		0% {transform: scale(1); outline: 0px outset lime; color: none;}
+		10% {outline: 3px outset lime; color: lime; transform: scale(1.5);}
+		80% { outline: 3px outset lime; color: line; transform: scale(1);}
+		100% { outline: 0px outset gold; color: none;}
+	}
+
+	@keyframes heal-fly {
+	  0% {
+		opacity: 1;
+		transform: scale(1) translateY(-10px);
+	  }
+	  100% {
+		opacity: 0;
+		transform: scale(5) translateY(-20px);
+	  }
+	}
+	
+	.sillynochange {
+		animation: sillynochange 0.6s ease-in-out;
+	}
+	@keyframes sillynochange {
+		0% {outline: 0px outset gray; color: none;}
+		10% {outline: 3px outset gray; color: gray; transform: scale(0.8);}
+		80% { outline: 3px outset gray; color: gray; transform: scale(1.1);}
+		100% { outline: 0px outset gold; color: none; transform: scale(1);}
+	}
+
+	.skull {
+	  position: absolute;
+	  font-size: 48px;
+	  color: black;
+	  animation: skull-death 2.5s ease-out forwards;
+	  pointer-events: none;
+	  z-index: 1000;
+	}
+	
+	@keyframes skull-death {
+	  0% {
+		opacity: 1;
+		transform: scale(1) translateY(0px);
+	  }
+	  100% {
+		opacity: 0;
+		transform: scale(5) translateY(0px);
+	  }
+	}
+	
+	@keyframes death {
+	  0%  { background-color:none; color: none; opacity: 1.0; outline: 0 outset red; }
+	  50%  { background-color:black; color: white; opacity: 0.8; outline: 6px outset red; transform: scale(0.95)}
+	  100%  { background-color:none; color: none; opacity: 1.0; outline: 0 outset none;}
+	}
+	.enemy-block.death {
+	animation: death 0.8s ease-in-out;
+	}
+	@keyframes revive {
+	  0%  { background-color:none; color: none; opacity: 1.0; outline: 0 outset lime; transform: scale(1);}
+	  50%  { background-color:white; color: gold; opacity: 0.8; outline: 6px outset gold; transform: scale(1.05);}
+	  100%  { background-color:none; color: none; opacity: 1.0; outline: 0 outset lime; transform: scale(1);}
+	}
+	.enemy-block.revive {
+	animation: revive 0.8s ease-in-out;
+	}
+	
+	.heart {
+	  position: absolute;
+	  font-size: 48px;
+	  color: lime;
+	  animation: heart-revive 4.5s ease-out forwards;
+	  pointer-events: none;
+	  z-index: 1000;
+	}
+	
+	@keyframes heart-revive {
+	  0% {color : lime;
+		opacity: 1;
+		transform: scale(1.5) translateY(0px) rotate(0deg);;
+	  }
+	  100% {color: gold;
+		opacity: 0;
+		transform: scale(6) translateY(-80px) rotate(-180deg);;
+	  }
+	}
+	
+
+    .label {
+      font-weight: bold;
+      margin-top: 6px;
+    }
+    .toggle {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+    .input-row {
+      display: flex;
+      gap: 2px;
+      margin: 2px 0;
+    }
+    .input-row input {
+      flex: 1;
+    }
+    .input-row button {
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+    .controls, .hp-tally {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 6px 0;
+    }
+    .button, button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      font-weight: bold;
+    }
+	.button:hover {
+    background-color: #d0d0d0;
+    }
+	
+	.color-buttons button.selected {
+		outline: 2px solid black;
+	}
+
+    .add-btn {
+      background: #59aef0;
+      color: black;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .add-btn:hover {
+    background-color: #509CD3;
+    }
+	
+	.copy-btn {
+      background: #59aef0;
+      color: black;
+	  float: right;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    .copy-btn:hover {
+    background-color: #509CD3;
+    }
+
+    .pass-btn {
+      background: #a3ff6f;
+	  float: left;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+	.pass-btn:hover {
+    background-color: #94E564;
+    }
+
+    .remove-enemy {
+      background: #ff7675;
+      color: white;
+      float: right;
+	  cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+	.remove-enemy:hover {
+    background-color: #E56969;
+    }
+	
+    .global-pass {
+      background: #30f00a;
+	  cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+	.global-pass:hover {
+    background-color: #2CD60A;
+    }
+	
+    .global-remove {
+      background: #f25063;
+	  cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+	.global-remove:hover {
+    background-color: #D6485B;
+    }
+	.toggle-debug {
+	  background: #ffbd59;
+	  float:right;
+	  cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+	.toggle-debug:hover {
+    background-color: #E5A950;
+    }
+	
+	.group-pass-btn {
+	  background: var(--btn-color, #a3ff6f); /* fallback color */
+	  float: left;
+	  cursor: pointer;
+	  transition: filter 0.2s ease;
+	}
+
+	.group-pass-btn:hover {
+	  filter: brightness(90%);
+	}
+	
+  </style>
+</head>
+<body>
+  <h1>Character HP Tracker</h1>
+
+
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+  <button id="add-enemy" class="button add-btn">+ Character</button>
+  <button id="global-pass" class="button global-pass">Pass All</button>
+  <button id="global-remove" class="button global-remove">Remove All</button>
+  <button id="toggle-debug" class="button toggle-debug" onclick="
+    const debugOptions = document.getElementById('debug-options');
+    if (debugOptions.style.display === 'none') {
+      debugOptions.style.display = 'flex';
+    } else {
+      debugOptions.style.display = 'none';
+    }
+  ">Extras</button>
+</div>
+
+<div id="debug-options" style="display: none; align-items: center; gap: 6px; margin-top: 4px;">
+  <label style="font-size: 0.9em;">
+    <input type="checkbox" id="jump-toggle" checked />
+    Auto Jump
+  </label>
+  
+  <label style="font-size: 0.9em;">
+    <input type="checkbox" id="silly-toggle" />
+    Silly Mode
+  </label>
+  
+  <label style="font-size: 0.9em;">
+    <input type="checkbox" id="group-toggle" />
+    Group Pass
+  </label>
+  
+   <label style="font-size: 0.9em;">
+    <input type="checkbox" id="expired-toggle" checked />
+    Ignore Expired DOTs
+  </label>
+  
+  <label style="font-size: 0.9em;">
+    <input type="checkbox" id="auto-remove-toggle" />
+    Auto Remove Effects
+  </label>
+  
+  <label style="font-size: 0.9em;">
+    <input type="checkbox" id="debugbox-toggle" />
+    Debug Mode
+  </label>
+</div>
+
+<div id="group-buttons" style="display: none; gap: 6px; margin-top: 6px;">
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#bababa" data-color="#bababa">Gray Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#ad9360" data-color="#ad9360">Brown Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#db4b4b" data-color="#db4b4b">Red Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#ffbd59" data-color="#ffbd59">Gold Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#7ed957" data-color="#7ed957">Green Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#0cc0df" data-color="#0cc0df">Blue Pass</button>
+  <button id="group-pass-button" class="button group-pass-btn" style="background:#bc98ff" data-color="#bc98ff">Purple Pass</button>
+</div>
+ 
+  <div id="enemy-container" class="enemy-container"></div>
+
+	<div id="debug" style="
+	  white-space: pre-wrap;
+	  background: #222;
+	  color: #0f0;
+	  padding: 10px;
+	  font-family: monospace;
+	  display: none;
+	  border-radius: 10px;
+	  margin-top: 10px;
+	  height: 150px;
+	  max-height: 400px;
+	  overflow-y: auto;
+	  resize: both;
+	  border: 1px solid #555;
+	"></div>
+
+  <script>
+    let enemyIndex = 0;
+    const container = document.getElementById('enemy-container');
+	let isAdjustingHP = false;
+	let isTextFocused = false;
+
+	document.addEventListener('focusin', (e) => {
+	  if (e.target.matches('input, textarea')) {
+		isTextFocused = true;
+	  }
+	});
+
+	document.addEventListener('focusout', (e) => {
+	  if (e.target.matches('input, textarea')) {
+		isTextFocused = false;
+	  }
+	});
+
+	container.addEventListener('dragover', (e) => {
+	  e.preventDefault();
+	  const draggingBlock = document.querySelector('.dragging');
+	  const afterElement = getDragAfterElement(container, e.clientX, e.clientY);
+
+	  const containerRect = container.getBoundingClientRect();
+	  const lastBlock = [...container.children].filter(el => el !== draggingBlock).pop();
+
+	  if (lastBlock) {
+		const lastRect = lastBlock.getBoundingClientRect();
+
+		const isBelowLastRow = e.clientY > lastRect.bottom;
+		const isRightOfLast = e.clientX > lastRect.right && e.clientY >= lastRect.top && e.clientY <= lastRect.bottom;
+
+		if (isBelowLastRow || isRightOfLast) {
+		  container.appendChild(draggingBlock);
+		  saveState();
+		  return;
+		}
+	  }
+
+  if (!afterElement) {
+    container.appendChild(draggingBlock);
+  } else {
+    container.insertBefore(draggingBlock, afterElement);
+  }
+
+  saveState();
+});
+
+
+	function getDragAfterElement(container, x, y) {
+	  const elements = [...container.querySelectorAll('.enemy-block:not(.dragging)')];
+
+		return elements.reduce((closest, child) => {
+		  const box = child.getBoundingClientRect();
+		  const offsetX = x - (box.left + box.width / 2);
+		  const offsetY = y - (box.top + box.height / 2);
+		  const distance = Math.hypot(offsetX, offsetY);
+
+		  if (distance < closest.distance) {
+			return { distance, element: child };
+		  } else {
+			return closest;
+		  }
+		}, { distance: Infinity }).element;
+
+	}
+	
+		function checkEffectRowStatus(row) {
+			const damageInput = row.querySelector('input[placeholder="Damage"]');
+			const durationInput = row.querySelector('input[placeholder="Duration"]');
+			const removeBtn = row.querySelector('button');
+			const autoRemoveEnabled = document.getElementById('auto-remove-toggle')?.checked;
+			const durationVal = durationInput.value.trim();
+			const duration = Number(durationVal);
+
+			// Color logic
+			if (duration === 0 && durationVal !== '') {
+				durationInput.style.backgroundColor = '#ffcccc';
+				damageInput.style.backgroundColor = '#ffcccc';
+			} else {
+				durationInput.style.backgroundColor = '';
+				damageInput.style.backgroundColor = '';
+			}
+
+			// Removal logic
+			if (autoRemoveEnabled && duration === 0 && durationVal !== '') {
+				debugLog("Effect removed");
+				removeBtn.click(); // Will also save state
+			}
+		}
+	
+
+
+
+	function rgbToHex(rgb) {
+		const result = rgb.match(/\d+/g);
+		if (!result) return rgb;
+		return (
+			'#' +
+			result.slice(0, 3).map(x => {
+				const hex = parseInt(x).toString(16);
+				return hex.length === 1 ? '0' + hex : hex;
+			}).join('')
+		);
+	}
+	
+	document.getElementById('debugbox-toggle').onchange = function () {
+	  const box = document.getElementById('debug');
+	  
+	  if (this.checked) {
+		box.style.display = 'block';
+		box.textContent = '';
+	  } else {
+		box.style.display = 'none';
+	  }
+
+	  saveState();
+	};
+	
+	function debugLog(...args) {
+	  const debugBox = document.getElementById('debug');
+	  if (!debugBox || debugBox.style.display === 'none') return;
+	  debugBox.textContent += args.join(' ') + '\n';
+	  debugBox.scrollTop = debugBox.scrollHeight; // auto-scroll to bottom
+	}
+
+
+
+    function saveState() {
+		const enemies = [...document.querySelectorAll('.enemy-block')].map(block => {
+		  const textarea = block.querySelector('textarea');
+		  return {
+			name: block.querySelector('.enemy-name').value,
+			hp: block.querySelector('.hp-value').value,
+			notes: textarea.value,
+			damageOn: block.querySelector('.damage-toggle').checked,
+			durationOn: block.querySelector('.duration-toggle').checked,
+			background: block.style.background,
+			textareaWidth: textarea.offsetWidth,
+			textareaHeight: textarea.offsetHeight,
+			pairs: [...block.querySelectorAll('.damage-duration-list .input-row')].map(row => {
+			  const inputs = row.querySelectorAll('input');
+			  return {
+				damage: inputs[0].value,
+				duration: inputs[1].value
+			  };
+			})
+		  };
+		});
+		localStorage.setItem('dotEnemies', JSON.stringify(enemies));
+    }
+
+	document.getElementById('group-toggle').addEventListener('change', function () 
+	{
+		const groupButtons = document.getElementById('group-buttons');
+		groupButtons.style.display = this.checked ? 'flex' : 'none';
+	});
+
+    function loadState() {
+      const saved = JSON.parse(localStorage.getItem('dotEnemies') || '[]');
+      saved.forEach(data => createEnemyBlock(data));
+    }
+
+    function createEnemyBlock(data = {}) 
+	{
+	  data.damageOn = data.damageOn !== undefined ? data.damageOn : true;
+	  data.durationOn = data.durationOn !== undefined ? data.durationOn : true;
+      const block = document.createElement('div');
+      block.className = 'enemy-block';
+	  block.style.background = data.background || '#bababa';
+
+      block.innerHTML = `
+		<button class="button pass-btn">Pass Turn</button>
+        <button class="remove-enemy">❌</button>
+		<button class="copy-btn">📋</button>
+        <input class="enemy-name" type="text" placeholder="Character Name" value="${data.name || ''}" />
+        <div class="label">HP Tally</div>
+        <div class="controls">
+			<button class="button hp-decrease">−</button>
+			<input class="hp-value" type="number" value="${data.hp || 0}" />
+			<button class="button hp-increase">+</button>
+        </div>
+        <div class="toggle">
+          <label>Damage <input class="damage-toggle" type="checkbox" ${data.damageOn ? 'checked' : ''}></label>
+          <label>Duration <input class="duration-toggle" type="checkbox" ${data.durationOn ? 'checked' : ''}></label>
+        </div>
+        <div class="label">Damage  /  Duration</div>
+		<div class="damage-duration-list"></div>
+		<button class="button add-damage">Add Effect</button>
+        <div class="label">DM Notes</div>
+        <textarea rows="3">${data.notes || ''}</textarea>
+        <div class="label">Result: <span class="result">0</span></div>
+		<div class="color-buttons">
+			<button style="background:#bababa" data-color="#bababa"></button>
+			<button style="background:#ad9360" data-color="#ad9360"></button>
+			<button style="background:#db4b4b" data-color="#db4b4b"></button>
+			<button style="background:#ffbd59" data-color="#ffbd59"></button>
+			<button style="background:#7ed957" data-color="#7ed957"></button>
+			<button style="background:#0cc0df" data-color="#0cc0df"></button>
+			<button style="background:#bc98ff" data-color="#bc98ff"></button>
+		</div>
+		`;
+
+		container.appendChild(block);
+		
+		function setupHoldButton(btn, direction) 
+		{
+			let intervalId = null;
+			let timeoutId = null;
+			let isHolding = false;
+			let speed = 500; // Initial delay before auto-repeat
+			let stepInterval = 150; // Repeat speed
+			const minInterval = 0.5;
+			let acceleration = 0.9;
+
+			const input = btn.parentElement.querySelector('.hp-value');
+
+			const step = () => {
+				if (direction === 'up') input.stepUp();
+				else input.stepDown();
+				input.dispatchEvent(new Event('input'));
+				stepInterval = Math.max(minInterval, stepInterval * acceleration);
+				acceleration = Math.max(0.005, acceleration * 0.9);
+				debugLog("Interval:", stepInterval);
+				debugLog("Accel:", acceleration);
+			};
+
+			const startStepping = () => {
+				isHolding = true;
+				step(); // First step immediately
+				intervalId = setInterval(() => {
+					step();
+					stepInterval = Math.max(minInterval, stepInterval * 0.9);
+					clearInterval(intervalId);
+					intervalId = setInterval(step, stepInterval);
+				}, stepInterval);
+			};
+
+			const reset = () => {
+				isAdjustingHP = false;
+				clearTimeout(timeoutId);
+				clearInterval(intervalId);
+				acceleration = 0.9;
+			};
+
+			btn.addEventListener('mousedown', () => {
+				isAdjustingHP = true;
+				isHolding = false;
+				speed = 500;
+				stepInterval = 150;
+				timeoutId = setTimeout(startStepping, speed);
+			});
+
+			btn.addEventListener('mouseup', () => {
+				if (!isHolding) step(); // Single click fallback
+				reset();
+			});
+
+			btn.addEventListener('mouseleave', reset);
+
+			btn.addEventListener('click', (e) => {
+				// Prevent default double-step if already handled by mouseup
+				if (isHolding) e.preventDefault();
+			});
+
+			btn.addEventListener('touchstart', (e) => {
+				e.preventDefault();
+				isAdjustingHP = true;
+				isHolding = false;
+				speed = 500;
+				stepInterval = 150;
+				timeoutId = setTimeout(startStepping, speed);
+			});
+
+			btn.addEventListener('touchend', () => {
+				if (!isHolding) step(); // Single tap fallback
+				reset();
+			});
+		}
+
+
+		// Attach to new buttons
+		setupHoldButton(block.querySelector('.hp-increase'), 'up');
+		setupHoldButton(block.querySelector('.hp-decrease'), 'down');
+
+
+
+		
+		const textarea = block.querySelector('textarea');
+		if (data.textareaWidth && data.textareaHeight) 
+		{
+			textarea.style.width = `${data.textareaWidth}px`;
+			textarea.style.height = `${data.textareaHeight}px`;
+		}
+		if (window.ResizeObserver) 
+		{
+		  const resizeObserver = new ResizeObserver(() => saveState());
+		  resizeObserver.observe(textarea);
+		}
+
+
+	
+		const newBlock = container.lastElementChild;
+		const allBlocks = document.querySelectorAll('.enemy-block');
+		const sillyEnabled = document.getElementById('silly-toggle')?.checked;
+				if (sillyEnabled) 
+				{
+					newBlock.classList.add('stomp');
+					setTimeout(() => 
+					{ 
+						newBlock.classList.remove('stomp'); 
+
+						
+						document.body.classList.add('quake');
+						setTimeout(() => document.body.classList.remove('quake'), 300);
+						document.querySelectorAll('.enemy-block').forEach(block => 
+						{
+							if (block !== newBlock)
+							{
+								block.classList.add('squish');
+								setTimeout(() => block.classList.remove('squish'), 500);
+							}
+						});
+					}, 1000);
+				} else
+				{
+					newBlock.classList.add('flash');
+					setTimeout(() => newBlock.classList.remove('flash'), 800);			
+				}
+	
+
+	
+		block.setAttribute('draggable', 'true');
+
+		block.addEventListener('dragstart', (e) => {
+		  const isInputOrTextareaHovered = e.target.closest('input, textarea');
+		  const selection = window.getSelection();
+		  const isTextBeingSelected = selection && selection.type === 'Range';
+
+		  if (isAdjustingHP || isInputOrTextareaHovered || isTextBeingSelected || isTextFocused) {
+				e.preventDefault();
+				return;
+			}
+
+		  e.dataTransfer.setData('text/plain', block.dataset.id);
+		  block.classList.add('dragging');
+		});
+
+
+
+		block.addEventListener('dragend', () => {
+		  block.classList.remove('dragging');
+		});
+
+		// Assign a unique ID (required to identify the block during drag)
+		block.dataset.id = `enemy-${Date.now()}`;
+	
+	  
+		block.querySelector('.copy-btn').onclick = () => 
+		{
+			const textarea = block.querySelector('textarea');
+			const copiedData = 
+			{
+				name: block.querySelector('.enemy-name').value,
+				hp: block.querySelector('.hp-value').value,
+				notes: textarea.value,
+				textareaWidth: textarea.offsetWidth,
+				textareaHeight: textarea.offsetHeight,
+				damageOn: block.querySelector('.damage-toggle').checked,
+				durationOn: block.querySelector('.duration-toggle').checked,
+				background: block.style.background,
+				pairs: [...block.querySelectorAll('.damage-duration-list .input-row')].map(row => 
+				{
+					const inputs = row.querySelectorAll('input');
+					return {
+						damage: inputs[0].value,
+						duration: inputs[1].value
+					};
+				})
+
+			};
+			createEnemyBlock(copiedData);
+			saveState();
+
+		};
+
+
+		// Handle color buttons
+		const colorButtons = block.querySelectorAll('.color-buttons button');
+		const currentBackground = data.background || '#bababa'; // fallback for new blocks
+
+		// Add click behavior to color buttons
+		colorButtons.forEach(btn => {
+			btn.onclick = () => {
+				block.style.background = btn.dataset.color;
+				colorButtons.forEach(b => b.classList.remove('selected'));
+				btn.classList.add('selected');
+				
+				const sillyEnabled = document.getElementById('silly-toggle')?.checked;
+					if (sillyEnabled)
+					{ 
+						block.classList.add('spin');
+						setTimeout(() => block.classList.remove('spin'), 600);
+					} else
+					{
+						
+						block.classList.add('colorfade');
+						setTimeout(() => block.classList.remove('colorfade'), 400);
+					}
+
+				
+				saveState();
+			};
+		});
+		
+
+		
+		const normalizedBackground = rgbToHex(currentBackground);
+		const matchBtn = [...colorButtons].find(btn => btn.dataset.color === normalizedBackground);
+		
+		debugLog("currentBackground:", currentBackground);
+		debugLog("Checking each button...");
+		colorButtons.forEach(btn => debugLog(" - btn color:", btn.dataset.color));
+		
+		if (matchBtn) {
+			matchBtn.classList.add('selected');
+		} else {
+			block.classList.add('error');
+			setTimeout(() => block.classList.remove('error'), 6000);
+		}
+		
+		
+		block.querySelector('.remove-enemy').onclick = () => 
+		{
+			const sillyEnabled = document.getElementById('silly-toggle')?.checked;
+			if (sillyEnabled) 
+			{
+				block.classList.add('shake');
+				setTimeout(() => 
+				{
+					block.classList.remove('shake');
+					block.classList.add('implode');
+
+					// Wait for implode animation to finish (e.g., 300ms)
+					setTimeout(() => 
+					{
+						// Create sparkle
+						const sparkle = document.createElement('div');
+						sparkle.className = 'sparkle';
+						sparkle.textContent = '✦';
+
+						// Position sparkle at center of the block
+						const rect = block.getBoundingClientRect();
+						sparkle.style.position = 'absolute';
+						sparkle.style.left = rect.left + rect.width / 2 + 'px';
+						sparkle.style.top = rect.top + rect.height / 2 + 'px';
+						sparkle.style.transform = 'translate(-50%, -50%)';
+						document.body.appendChild(sparkle);
+
+						// Wait for sparkle animation to finish (500ms)
+						setTimeout(() => 
+						{
+							sparkle.remove();
+							block.remove();
+							saveState();
+						}, 1000);
+					}, 300);
+				}, 500);
+			} else
+			{
+				block.classList.add('implode');
+				setTimeout(() => 
+				{
+				block.remove();
+				saveState();
+				}, 300);
+			}
+		};
+
+
+
+		const addField = (damageVal = '', durationVal = '') => {
+			const row = document.createElement('div');
+			row.className = 'input-row';
+			row.innerHTML = `
+				<input type="text" class="damage-input" placeholder="Damage" value="${damageVal}">
+				<input type="text" class="duration-input" placeholder="Duration" value="${durationVal}">
+				<button>❌</button>
+			`;
+
+			const damageInput = row.querySelector('.damage-input');
+			const durationInput = row.querySelector('.duration-input');
+
+			const highlightColor = '#ffcccc';
+
+			const validateDuration = () => {
+				const val = durationInput.value.trim();
+				const isZero = val === '0';
+
+				if (isZero) {
+					durationInput.style.backgroundColor = highlightColor;
+					damageInput.style.backgroundColor = highlightColor;
+				} else {
+					durationInput.style.backgroundColor = '';
+					damageInput.style.backgroundColor = '';
+				}
+			};
+
+			// Initial validation
+			validateDuration();
+
+			// Re-validate on input
+			durationInput.addEventListener('input', () => {
+				validateDuration();
+				saveState();
+			});
+
+			row.querySelector('button').onclick = () => {
+				row.remove();
+				saveState();
+			};
+
+			block.querySelector('.damage-duration-list').appendChild(row);
+		};
+
+
+
+
+
+		block.querySelector('.add-damage').onclick = () => addField();
+
+		(data.pairs || []).forEach(pair => addField(pair.damage, pair.duration));
+
+
+		block.querySelectorAll('input, textarea').forEach(el => el.addEventListener('input', saveState));
+		block.querySelectorAll('button').forEach(el => 
+		{
+			if (!el.onclick) el.addEventListener('click', saveState);
+		});
+
+		block.querySelector('.pass-btn').onclick = () => 
+		{
+			
+
+			const resultEl = block.querySelector('.result');
+			let result = 0;
+			const sillyEnabled2 = document.getElementById('silly-toggle')?.checked;
+				if (sillyEnabled2) 
+				{
+					block.classList.add('passing');
+					setTimeout(() => block.classList.remove('passing'), 600);
+				} else 
+				{
+					block.classList.add('passing');
+					setTimeout(() => block.classList.remove('passing'), 600);			
+				}
+
+			
+			[...block.querySelectorAll('.damage-duration-list .input-row')].forEach(row => 
+			{	
+				const expiredEnabled = document.getElementById('expired-toggle')?.checked;
+				const durationInput2 = row.querySelectorAll('input')[1];
+				
+				//Logging
+				debugLog("Duration Input checked:", parseInt(durationInput2.value), "and Expire Ignore set to:");
+				if (expiredEnabled) {
+					debugLog("true");
+					if (parseInt(durationInput2.value) > 1)
+					{ 
+						debugLog("All conditions met for to NOT ignore");
+					}
+				} else {
+					debugLog("false");
+					if (!expiredEnabled)
+					{ 
+						debugLog("All conditions met for to NOT ignore");
+					}
+				}
+									debugLog("Expire duration check:", parseInt(durationInput2.value));
+					const damageInput = row.querySelectorAll('input')[0]; // First input = damage
+					let expr = damageInput.value.trim();
+
+					// Replace dice expressions (e.g. 2d6, -1d4) with actual rolls
+					expr = expr.replace(/([+-]?\d*)d(\d+)/gi, (_, countRaw, sidesRaw) => 
+					{
+						const count = parseInt(countRaw || '1', 10);
+						const sides = parseInt(sidesRaw, 10);
+						let total = 0;
+						const rolls = Math.abs(count);
+						for (let i = 0; i < rolls; i++) 
+						{
+							total += Math.floor(Math.random() * sides) + 1;
+						}
+						return count < 0 ? `-(${total})` : total;
+					});
+				try 
+				{
+					if (block.querySelector('.damage-toggle').checked) 
+					{
+						debugLog("DamageEnabled2 On");
+					} else {
+						debugLog("DamageEnabled2 Off");
+					}
+					const evaluated = Math.ceil(Function('"use strict"; return (' + expr + ')')());
+					if (!isNaN(evaluated)) 
+					{
+						if ((expiredEnabled && !(parseInt(durationInput2.value) < 1) && block.querySelector('.damage-toggle').checked) || !expiredEnabled && block.querySelector('.damage-toggle').checked) 
+						{
+							result += evaluated;
+							if (evaluated > 0) 
+							{
+								damageInput.classList.add('damaged');
+								setTimeout(() => damageInput.classList.remove('damaged'), 600);
+							} else if (evaluated < 0)
+							{
+								damageInput.classList.add('healed');
+								setTimeout(() => damageInput.classList.remove('healed'), 600);
+							} else 
+							{
+								damageInput.classList.add('nochange');
+								setTimeout(() => damageInput.classList.remove('nochange'), 600);
+							}
+						} else
+						{
+							damageInput.classList.add('nochange');
+							setTimeout(() => damageInput.classList.remove('nochange'), 600);
+						}
+
+					}
+				} catch (e) 
+				{
+					debugLog("Invalid expression:", expr);
+				}
+				
+
+			});
+
+			
+
+		   if (block.querySelector('.duration-toggle').checked) 
+			{
+				[...block.querySelectorAll('.damage-duration-list .input-row')].forEach(row => 
+				{
+					const durationInput = row.querySelectorAll('input')[1]; // Second input = duration
+					const num = parseInt(durationInput.value);
+					if ((!isNaN(num) &&  num > 0) )  
+					{
+						durationInput.value = Math.max(0, num - 1);
+
+						durationInput.classList.add('damaged');
+						setTimeout(() => durationInput.classList.remove('damaged'), 600);
+					} else 
+					{
+						durationInput.classList.add('nochange');
+						setTimeout(() => durationInput.classList.remove('nochange'), 600);
+					}
+					
+					debugLog("Effect status checked");
+					checkEffectRowStatus(row);
+					saveState();
+				});
+			}
+
+
+			resultEl.textContent = result;
+			const sillyEnabled = document.getElementById('silly-toggle')?.checked;
+			if (block.querySelector('.damage-toggle').checked) 
+			{
+				if (sillyEnabled)
+				{
+					if (result < 0)
+					{
+						debugLog("Silly Healing is working");
+						debugLog("Sily Healing Amount:", result);
+						const hpPrev = block.querySelector('.hp-value');
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('sillyhealed');
+						setTimeout(() => hp.classList.remove('sillyhealed'), 600);
+						if (parseInt(hpPrev.value) == 0) 
+						{
+							const logName = block.querySelector('.enemy-name').value;
+							debugLog("❤", String(logName), "revived");
+
+							// Create heart
+							const heart = document.createElement('div');
+							heart.className = 'heart';
+							heart.textContent = '❤';
+
+							
+
+							// Position healeffect at center of the hp bar
+							const rect = hp.getBoundingClientRect();
+							heart.style.position = 'absolute';
+							heart.style.left = rect.left + rect.width / 4 + 'px';
+							heart.style.top = rect.top + rect.height /4 + 'px';
+							heart.style.transform = 'translate(-50%, -50%)';
+							document.body.appendChild(heart);
+							block.classList.add('revive');
+							setTimeout(() => block.classList.remove('revive'), 800);	
+
+							// Wait for heart animation to finish (2500ms)
+							setTimeout(() => 
+							{
+								heart.remove();
+							}, 4500);							
+						} else 
+						{					
+							// Create healeffect
+							const healeffect = document.createElement('div');
+							healeffect.className = 'healeffect';
+							healeffect.textContent = '+   +   +';
+
+							// Position healeffect at center of the hp bar
+							const rect = hp.getBoundingClientRect();
+							healeffect.style.position = 'absolute';
+							healeffect.style.left = rect.left + rect.width / 4 + 'px';
+							healeffect.style.top = rect.top + rect.height / 4 + 'px';
+							healeffect.style.transform = 'translate(-50%, -50%)';
+							document.body.appendChild(healeffect);
+
+							// Wait for healeffect animation to finish (1500ms)
+							setTimeout(() => 
+							{
+								healeffect.remove();
+							}, 1500);
+						}
+						
+					} else if (result > 0) 
+					{
+						debugLog("Silly Damage is working");
+						debugLog("Silly Damage Amount:", result);
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('sillydamaged');
+						setTimeout(() => hp.classList.remove('sillydamaged'), 600);
+						
+						const hpPrev = block.querySelector('.hp-value');
+						debugLog("hpPrev:", parseInt(hpPrev.value), ", Result:", result );
+						if ( Math.max(0, parseInt(hpPrev.value) - result) == 0)
+						{
+							//parseInt(hpPrev.value) > 0 &&
+							const logName = block.querySelector('.enemy-name').value;
+							debugLog("💀", String(logName), "died");
+							// Create skull
+							const skull = document.createElement('div');
+							skull.className = 'skull';
+							skull.textContent = '💀';
+							
+
+							// Position healeffect at center of the hp bar
+							const rect = hp.getBoundingClientRect();
+							skull.style.position = 'absolute';
+							skull.style.left = rect.left + rect.width / 4 + 'px';
+							skull.style.top = rect.top + rect.height / 4 + 'px';
+							skull.style.transform = 'translate(-50%, -50%)';
+							document.body.appendChild(skull);
+							block.classList.add('death');
+							setTimeout(() => block.classList.remove('death'), 800);
+
+							// Wait for skull animation to finish (2500ms)
+							setTimeout(() => 
+							{
+								skull.remove();
+							}, 2500);
+						}
+					} else 
+					{
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('sillynochange');
+						setTimeout(() => hp.classList.remove('sillynochange'), 600);				
+					}
+				} else 
+				{
+					if (result < 0)
+					{
+						debugLog("Healing is working");
+						debugLog("Healing Amount:", result);
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('healed');
+						setTimeout(() => hp.classList.remove('healed'), 600);
+						const hpPrev = block.querySelector('.hp-value');
+						debugLog("hpPrev:", parseInt(hpPrev.value), ", Result:", result );
+						if (parseInt(hpPrev.value) == 0) 
+						{
+							//parseInt(hpPrev.value) > 0 &&
+							const logName = block.querySelector('.enemy-name').value;
+							debugLog("❤", String(logName), "revived");
+							block.classList.add('revive');
+							setTimeout(() => block.classList.remove('revive'), 800);						
+						}
+					} else if (result > 0) 
+					{
+						debugLog("Damage is working");
+						debugLog("Damage Amount:", result);
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('damaged');
+						setTimeout(() => hp.classList.remove('damaged'), 600);
+						
+						const hpPrev = block.querySelector('.hp-value');
+						debugLog("hpPrev:", parseInt(hpPrev.value), ", Result:", result );
+						if ( Math.max(0, parseInt(hpPrev.value) - result) == 0)
+						{
+							//parseInt(hpPrev.value) > 0 &&
+							const logName = block.querySelector('.enemy-name').value;
+							debugLog("💀", String(logName), "died");
+							block.classList.add('death');
+							setTimeout(() => block.classList.remove('death'), 800);
+						}
+					} else 
+					{
+						const hp = block.querySelector('.hp-value');
+						hp.classList.add('nochange');
+						setTimeout(() => hp.classList.remove('nochange'), 600);				
+					}
+				}
+			}
+					
+			const hp = block.querySelector('.hp-value');
+			if (block.querySelector('.damage-toggle').checked) 
+			{
+				hp.value = Math.max(0, parseInt(hp.value) - result);}
+				debugLog("Damage Applied");
+				saveState();
+			};
+			
+
+		  
+			const jumpEnabled = document.getElementById('jump-toggle')?.checked;
+			if (jumpEnabled) 
+			{
+				block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				block.querySelector('.enemy-name').focus();
+			}
+
+		}
+		
+		
+		
+		
+
+		document.getElementById('add-enemy').onclick = () => createEnemyBlock();
+		
+		document.getElementById('global-pass').onclick = () => 
+		{
+		  document.querySelectorAll('.pass-btn').forEach(btn => btn.click());
+		};
+	
+		document.querySelectorAll('.group-pass-btn').forEach(groupBtn => 
+		{
+			groupBtn.addEventListener('click', () => 
+			{
+				const targetColor = getComputedStyle(groupBtn).backgroundColor;
+
+				document.querySelectorAll('.enemy-block').forEach(block => 
+				{
+				  const blockColor = getComputedStyle(block).backgroundColor;
+
+					if (blockColor === targetColor) 
+					{
+						const passBtn = block.querySelector('.pass-btn');
+						if (passBtn) passBtn.click();
+					}
+				});
+			});
+		});
+
+	
+		document.getElementById('global-remove').onclick = () => 
+		{
+		  document.querySelectorAll('.remove-enemy').forEach(btn => btn.click());
+		};
+		
+		document.getElementById('jump-toggle').addEventListener('change', () => 
+		{
+		  localStorage.setItem('jumpToNewEnemies', document.getElementById('jump-toggle').checked);
+		});
+		
+		document.getElementById('silly-toggle').addEventListener('change', () => 
+		{
+		  localStorage.setItem('sillyTime', document.getElementById('silly-toggle').checked);
+		});
+		
+		document.getElementById('auto-remove-toggle').addEventListener('change', () => 
+		{
+		  localStorage.setItem('autoRemoveOn', document.getElementById('auto-remove-toggle').checked);
+		});
+		
+		document.getElementById('expired-toggle').addEventListener('change', () => 
+		{
+		  localStorage.setItem('expiredOn', document.getElementById('expired-toggle').checked);
+		});
+
+		// On page load, apply saved setting
+		window.addEventListener('DOMContentLoaded', () => 
+		{
+			const savedJump = localStorage.getItem('jumpToNewEnemies');
+			if (savedJump !== null) 
+			{
+				document.getElementById('jump-toggle').checked = savedJump === 'true';
+			}
+			const savedSilly = localStorage.getItem('sillyTime');
+			if (savedSilly !== null) 
+			{
+				document.getElementById('silly-toggle').checked = savedSilly === 'true';
+			}
+			
+			const savedAutoRemove = localStorage.getItem('autoRemoveOn');
+			if (savedAutoRemove !== null) 
+			{
+				document.getElementById('auto-remove-toggle').checked = savedAutoRemove === 'true';
+			}
+			
+			const savedExpired = localStorage.getItem('expiredOn');
+			if (savedExpired !== null) 
+			{
+				document.getElementById('expired-toggle').checked = savedExpired === 'true';
+			}
+		});
+	
+	
+
+
+    loadState();
+  </script>
+</body>
+</html>
